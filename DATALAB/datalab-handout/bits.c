@@ -262,7 +262,19 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+  if(x<0)
+  {
+    x=~x;
+  }
+  
+  int msb = 0;
+  
+  while (x != 0) {
+      x = x / 2;
+      msb++;
+  }
+  return (msb+1);
+
 }
 //float
 /* 
@@ -313,7 +325,27 @@ unsigned float_twice(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  return 2;
+  if (x == 0) return 0;
+
+    int sign = 0;
+    if (x < 0) {
+        sign = 0x80000000;
+        x = -x;  
+    }
+    int msb = 0;
+    unsigned temp = x;
+    while (temp >>= 1) {  
+        msb++;
+    }
+
+  int exponent = msb -1 + 127;
+    int mantissa = (x & (1 << (msb-1)-1)) << (23 - (msb-1));
+
+    // Rounding
+    int round_bit = (x & (1 << (msb - 24))) && ((x & ((1 << (msb - 24)) - 1)) || (mantissa & 1));
+    mantissa += round_bit;
+
+    return sign | (exponent << 23) | (mantissa & 0x7FFFFF);
 }
 /* 
  * float_f2i - Return bit-level equivalent of expression (int) f
