@@ -325,28 +325,11 @@ unsigned float_twice(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  if (x == 0) return 0;
-
-    int sign = 0;
-    if (x < 0) {
-        sign = 0x80000000;
-        x = -x;  
-    }
-    int msb = 0;
-    unsigned temp = x;
-    while (temp >>= 1) {  
-        msb++;
-    }
-
-  int exponent = msb -1 + 127;
-    int mantissa = (x & (1 << (msb-1)-1)) << (23 - (msb-1));
-
-    // Rounding
-    int round_bit = (x & (1 << (msb - 24))) && ((x & ((1 << (msb - 24)) - 1)) || (mantissa & 1));
-    mantissa += round_bit;
-
-    return sign | (exponent << 23) | (mantissa & 0x7FFFFF);
+ 
 }
+
+
+
 /* 
  * float_f2i - Return bit-level equivalent of expression (int) f
  *   for floating point argument f.
@@ -360,5 +343,37 @@ unsigned float_i2f(int x) {
  *   Rating: 4
  */
 int float_f2i(unsigned uf) {
-  return 2;
+  int sign = uf & 0x80000000;  // Extract sign bit
+  int exponent = ((uf >> 23) & 0xFF) - 127;  // Extract exponent and remove bias
+  int mantissa = (uf & 0x7FFFFF) | 0x800000; // Add implicit leading 1
+
+  // Handle NaN and infinity
+  if (((uf >> 23) & 0xFF) == 0xFF) {
+      return 0x80000000u;
+  }
+
+  // If exponent is too small, value is < 1, so return 0
+  if (exponent < 0) {
+      return 0;
+  }
+
+  // If exponent is too large for int, return out-of-range value
+  if (exponent > 31) {
+      return 0x80000000u;
+  }
+
+  // Shift mantissa to correct position based on exponent
+  if (exponent > 23) {
+      mantissa <<= (exponent - 23);
+  } else {
+      mantissa >>= (23 - exponent);
+  }
+
+  // Apply sign
+  if (sign) {
+      mantissa = -mantissa;
+  }
+
+  return mantissa;
 }
+
